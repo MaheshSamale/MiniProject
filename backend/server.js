@@ -13,6 +13,6 @@ app.get('/',(req,res)=>{
 })
 
 app.use('/api/auth', authRoutes);
-app.use('/api', auth, companyRoutes); // All protected routes
+app.use('/api/company', auth, companyRoutes); // All protected routes
 
 app.listen(4001, () => console.log('Server running on 5000'));
