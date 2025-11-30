@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginCompany } from '../services/auth';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { toast } from 'react-toastify';
 
 function CompanyLogin() {
     const navigate = useNavigate();
@@ -19,13 +20,15 @@ function CompanyLogin() {
             if (result.status == "success") {
                 sessionStorage.setItem('token', result.data.token);
                 sessionStorage.setItem('user', JSON.stringify(result.data));
-                alert('Login Successful');
+                // alert('Login Successful');
+                toast.success("Loginn Successful")
                 navigate('/company-dashboard');
             } else {
                 alert(result.error);
             }
         } catch (ex) {
-            alert('Login failed');
+            // alert('Login failed');
+            toast.error(ex)
         }
         setLoading(false);
     }

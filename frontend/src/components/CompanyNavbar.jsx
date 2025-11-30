@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -19,13 +19,13 @@ function CompanyNavbar() {
     };
 
     return (
-        <nav className="navbar navbar-expand-lg navbar-dark bg-success sticky-top shadow">
+        <nav className="navbar navbar-expand-lg bg-success navbar-dark sticky-top shadow">
             <div className="container-fluid px-3 px-md-4">
                 {/* Brand */}
-                <div className="navbar-brand d-flex align-items-center fw-bold">
+                <Link className="navbar-brand fw-bold fs-5" to="/company-dashboard">
                     <i className="fas fa-utensils me-2"></i>
-                    <span>FoodCoupon Admin</span>
-                </div>
+                    FoodCoupon Admin
+                </Link>
 
                 {/* Mobile Toggle */}
                 <button 
@@ -34,62 +34,44 @@ function CompanyNavbar() {
                     data-bs-toggle="collapse" 
                     data-bs-target="#navbarNav"
                 >
-                    <i className="fas fa-bars fs-5"></i>
+                    <span className="navbar-toggler-icon"></span>
                 </button>
 
-                {/* Navigation */}
+                {/* Navigation Links */}
                 <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav me-auto ms-3 ms-lg-0">
-                        <li className="nav-item">
-                            <a className="nav-link px-2 py-2" href="#dashboard">
-                                <i className="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link px-2 py-2" href="#employees">
-                                <i className="fas fa-users me-1"></i>Employees
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link px-2 py-2" href="#vendors">
-                                <i className="fas fa-store me-1"></i>Vendors
-                            </a>
-                        </li>
-                    </ul>
+                    <div className="navbar-nav me-auto ms-3 ms-lg-0">
+                        <Link className="nav-link px-3 py-2" to="/company-dashboard">
+                            <i className="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </Link>
+                        <Link className="nav-link px-3 py-2" to="/company-employees">
+                            <i className="fas fa-users me-1"></i>Employees
+                        </Link>
+                        <Link className="nav-link px-3 py-2" to="/company-vendors">
+                            <i className="fas fa-store me-1"></i>Vendors
+                        </Link>
+                        <Link className="nav-link px-3 py-2" to="/company-coupons">
+                            <i className="fas fa-ticket-alt me-1"></i>Coupons
+                        </Link>
+                    </div>
 
-                    {/* User Profile - SHOWS ON ALL DEVICES */}
-                    <div className="dropdown ms-2">
-                        <a 
-                            className="d-flex align-items-center text-white text-decoration-none dropdown-toggle p-2" 
-                            href="#" 
-                            role="button" 
-                            data-bs-toggle="dropdown"
-                        >
-                            <i className="fas fa-user-circle me-2 fs-5"></i>
-                            <span className="fw-bold small d-block d-md-inline">
-                                {user.name || 'Admin'}
-                            </span>
-                            {/* <span className="d-md-none text-muted small">({us || 'User'})</span> */}
-                        </a>
-                        <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-1">
-                            <li>
-                                <span className="dropdown-item-text px-3 py-2 small">
-                                    <i className="fas fa-user me-2"></i>
+                    {/* User Profile & Logout */}
+                    <div className="d-flex align-items-center">
+                        <div className="dropdown ms-2">
+                            <a 
+                                className="d-flex align-items-center text-white text-decoration-none dropdown-toggle p-2" 
+                                href="#" 
+                                role="button" 
+                                data-bs-toggle="dropdown"
+                            >
+                                <i className="fas fa-user-circle me-2 fs-5"></i>
+                                <span className="fw-bold small d-block d-md-inline">
                                     {user.name || 'Admin'}
                                 </span>
-                            </li>
-                            <li>
-                                <span className="dropdown-item-text px-3 py-1 small text-muted">
-                                    {user.email || ''}
-                                </span>
-                            </li>
-                            <li><hr className="dropdown-divider" /></li>
-                            <li>
-                                <button className="dropdown-item py-2 fw-semibold text-danger" onClick={logout}>
-                                    <i className="fas fa-sign-out-alt me-2"></i>Logout
-                                </button>
-                            </li>
-                        </ul>
+                            </a>
+                            <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-1">
+                                <li><button className="dropdown-item py-2 fw-semibold text-danger w-100 text-start" onClick={logout}>Logout</button></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
