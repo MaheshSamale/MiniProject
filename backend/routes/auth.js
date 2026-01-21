@@ -8,44 +8,52 @@ const router = express.Router();
 
 // Login - COMPANY/EMPLOYEE/VENDOR
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    console.log(req.body);
-    
-    const sql = "SELECT * FROM users WHERE email = ?";
-
-
-    pool.query(sql, [email], (err, data) => {
-        console.log(data);
-        
-        if (err)
-            res.send(result.createResult(err))
-        else if (data.length == 0)
-            res.send(result.createResult("Invalid Email"))
-        else {
-            bcrypt.compare(password, data[0].password, (err, passwordStatus) => {
-                if (passwordStatus) {
-                    const payload = {
-                        id: data[0].id,
-                    }
-                    const token = jwt.sign(payload, config.SECRET)
-                    const user = {
-                        token,
-                        role: data[0].role,
-                        name: data[0].name,
-                        email: data[0].email,
-                        phone: data[0].phone
-                    }
-                    res.send(result.createResult(null, user))
-                    console.log(user)
-                }
-                else
-                    res.send(result.createResult('Invalid Password'))
-            })
-        }
-
-    })
-
+  const { email, password } = req.body;
+  console.log(req.body);
+  
+  // ✅ JOIN users + companies to get company_id
+  const sql = `SELECT u.*, c.id as company_id 
+               FROM users u 
+               LEFT JOIN companies c ON c.user_id = u.id 
+               WHERE u.email = ?`;
+  
+  pool.query(sql, [email], (err, data) => {
+      console.log(data);
+      
+      if (err)
+          res.send(result.createResult(err))
+      else if (data.length == 0)
+          res.send(result.createResult("Invalid Email"))
+      else {
+          bcrypt.compare(password, data[0].password, (err, passwordStatus) => {
+              if (passwordStatus) {
+                  // ✅ JWT payload includes companyId (companies.id)
+                  const payload = {
+                      id: data[0].id,           // users.id (companies.user_id)
+                      companyId: data[0].company_id,  // companies.id ← KEY!
+                      role: data[0].role
+                  };
+                  const token = jwt.sign(payload, config.SECRET);
+                  
+                  // ✅ Response includes companyId for frontend
+                  const user = {
+                      token,
+                      role: data[0].role,
+                      name: data[0].name,
+                      email: data[0].email,
+                      phone: data[0].phone,
+                      companyId: data[0].company_id  // ← CRITICAL
+                  };
+                  res.send(result.createResult(null, user));
+                  console.log('Login success:', user);
+              }
+              else
+                  res.send(result.createResult('Invalid Password'))
+          })
+      }
+  });
 });
+
 
 
 
