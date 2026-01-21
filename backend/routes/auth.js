@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../utils/db');
-const result = require('../utils/result');
+const { createResult } = require('../utils/result');
 const config = require('../utils/config');
 const router = express.Router();
 
@@ -33,8 +33,7 @@ router.post('/login', async (req, res) => {
                         role: data[0].role,
                         name: data[0].name,
                         email: data[0].email,
-                        phone: data[0].phone,
-                        id: data[0].id
+                        phone: data[0].phone
                     }
                     res.send(result.createResult(null, user))
                     console.log(user)
@@ -75,6 +74,18 @@ router.post('/register-company', async (req, res) => {
     });
 });
 
-
+// 3. EMPLOYEE PIN LOGIN
+router.post('/employee-login', (req, res) => {
+  const { pin } = req.body;
+  const sql = `SELECT u.*, e.id as employee_id, e.company_id, c.id as company_id 
+               FROM users u JOIN employees e ON e.user_id = u.id JOIN companies c ON e.company_id = c.id 
+               WHERE u.pin_code = ? AND u.status = 1 AND e.status = 1`;
+  pool.query(sql, [pin], (err, data) => {
+    if (err || data.length === 0) return res.json(createResult('Invalid PIN'));
+    const payload = { userId: data[0].id, role: 'EMPLOYEE', companyId: data[0].company_id, employeeId: data[0].employee_id };
+    const token = jwt.sign(payload, config.SECRET);
+    res.json(createResult(null, { token, role: 'EMPLOYEE', name: data[0].name, employee_id: data[0].employee_id }));
+  });
+});
 
 module.exports = router;

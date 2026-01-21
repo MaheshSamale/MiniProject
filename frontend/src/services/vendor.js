@@ -14,6 +14,8 @@ export async function getVendors(token) {
 }
 
 export async function addVendor(vendorData, token) {
+    console.log(vendorData)
+    console.log(token)
     try {
         const response = await axios.post(config.BASE_URL + '/company/vendors', vendorData, {
             headers: { token }

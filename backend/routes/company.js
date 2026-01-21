@@ -1,13 +1,12 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const pool = require('../utils/db');
 const result = require('../utils/result');
-const bcrypt = require('bcrypt');
-const config = require('../utils/config');
 const router = express.Router();
 
-
+// GET Employees (company only)
 router.get('/employees', async (req, res) => {
-    const company_id = req.headers.userid; 
+    const company_id = req.headers.userid; // company.user_id from JWT
     try {
         const sql = `SELECT e.*, u.name, u.email, u.phone, u.pin_code 
                      FROM employees e 
@@ -20,7 +19,7 @@ router.get('/employees', async (req, res) => {
     }
 });
 
-
+// Add Employee (company only)
 router.post('/employees', async (req, res) => {
     const { name, email, phone, pin_code, employee_code, department, designation } = req.body;
     const company_id = req.headers.userid;
@@ -40,7 +39,7 @@ router.post('/employees', async (req, res) => {
     }
 });
 
-
+// GET Vendors (company only)
 router.get('/vendors', async (req, res) => {
     const company_id = req.headers.userid;
     try {
@@ -55,66 +54,27 @@ router.get('/vendors', async (req, res) => {
     }
 });
 
-
-
-router.post('/vendors', (req, res) => {
-    console.log("Vendor Add");
-    console.log(req.body);
-
-    const { vendor_name, phone, location, email } = req.body;
-    const company_id = req.body.user_id;
-    console.log(company_id)
-
-    // If email not provided, auto-generate one
-    const vendorEmail = email ? email : `${vendor_name.toLowerCase()}_${Date.now()}@vendor.com`;
-
-    const fixPass = vendor_name; // default password
-
-    if (!vendor_name || !phone) {
-        return res.send(result.createResult("vendor_name and phone are required"));
+// Add Vendor (company only)
+router.post('/vendors', async (req, res) => {
+    const { vendor_name, phone, location } = req.body;
+    const company_id = req.headers.userid;
+    
+    try {
+        const sql = `INSERT INTO users (role, name, phone, password, status) 
+                     VALUES ('VENDOR', ?, ?, 'hashedpass', 1)`;
+        const [userData] = await pool.query(sql, [vendor_name, phone]);
+        
+        const vendorSql = `INSERT INTO vendors (user_id, company_id, vendor_name, phone, location, status) 
+                          VALUES (?, ?, ?, ?, ?, 1)`;
+        await pool.query(vendorSql, [userData.insertId, company_id, vendor_name, phone, location]);
+        
+        res.send(result.createResult(null, 'Vendor added'));
+    } catch (err) {
+        res.send(result.createResult(err));
     }
-
-    const userSql = `
-        INSERT INTO users (role, name, email, phone, password, status)
-        VALUES ('VENDOR', ?, ?, ?, ?, 1)
-    `;
-
-    bcrypt.hash(fixPass, config.SALTROUND, (err, hashedPassword) => {
-
-        if (err) {
-            return res.send(result.createResult(err));
-        }
-
-        pool.query(userSql, [vendor_name, vendorEmail, phone, hashedPassword], (err, userData) => {
-
-            if (err) {
-                return res.send(result.createResult(err));
-            }
-
-            const user_id = userData.insertId;
-
-            const vendorSql = `
-                INSERT INTO vendors (user_id, company_id, vendor_name, phone, location, status)
-                VALUES (?, ?, ?, ?, ?, 1)
-            `;
-
-            pool.query(vendorSql,[user_id, company_id, vendor_name, phone, location],(err, vendorData) => {
-                    if(err){
-                          console.log(err);
-                        return res.send(result.createResult(err, "error"));
-                    }
-                    return res.send(result.createResult(null, vendorData))
-             
-                }
-            );
-        });
-    });
 });
 
-
-
-
-
+// GET Coupon Masters (company only)
 router.get('/coupons', async (req, res) => {
     const company_id = req.headers.userid;
     try {
@@ -126,7 +86,7 @@ router.get('/coupons', async (req, res) => {
     }
 });
 
-
+// Assign Coupons to Employee
 router.post('/assign-coupons', async (req, res) => {
     const { employee_id, coupon_master_id, allocated } = req.body;
     const company_id = req.headers.userid;
@@ -147,7 +107,7 @@ router.post('/assign-coupons', async (req, res) => {
     }
 });
 
-
+// Get Employee Coupons (for dashboard/reports)
 router.get('/employee-coupons/:employee_id', async (req, res) => {
     const company_id = req.headers.userid;
     const employee_id = req.params.employee_id;
@@ -164,3 +124,5 @@ router.get('/employee-coupons/:employee_id', async (req, res) => {
 });
 
 module.exports = router;
+
+

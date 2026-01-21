@@ -16,6 +16,7 @@ function CompanyVendors() {
 
     useEffect(() => {
         const token = sessionStorage.getItem('token');
+        console.log(token)
         if (!token) {
             navigate('/company-login');
             return;
@@ -45,17 +46,9 @@ function CompanyVendors() {
 
         try {
             const token = sessionStorage.getItem('token');
-            const storedUser = sessionStorage.getItem('user');
-            if (storedUser) {
-                const user = JSON.parse(storedUser);
-                formData.user_id = user.id;
-                console.log(formData);
-                
-            //    console.log( (JSON.parse(storedUser.id)));
-            }
-                 
             const result = await addVendor(formData, token);
-            if (result.status == "success"){
+            
+            if (result.success) {
                 alert('Vendor added successfully!');
                 setShowAddModal(false);
                 setFormData({ vendor_name: '', phone: '', location: '' });
