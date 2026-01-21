@@ -21,7 +21,7 @@ export async function addEmployee(employeeData, token) {
         });
         return response.data;
     } catch (ex) {
-        console.log(ex);
+       
         throw ex;
     }
 }

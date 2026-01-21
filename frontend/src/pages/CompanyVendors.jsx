@@ -29,7 +29,7 @@ function CompanyVendors() {
             const result = await getVendors(token);
             setVendors(result.data || []);
         } catch (ex) {
-            console.log('Failed to fetch vendors');
+          
         }
         setLoading(false);
     };
@@ -46,6 +46,16 @@ function CompanyVendors() {
 
         try {
             const token = sessionStorage.getItem('token');
+<<<<<<< HEAD
+=======
+            const storedUser = sessionStorage.getItem('user');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                formData.user_id = user.id;
+       
+            }
+                 
+>>>>>>> 6289131 (frontedn and CompanyApp)
             const result = await addVendor(formData, token);
             
             if (result.success) {
@@ -57,7 +67,7 @@ function CompanyVendors() {
                 alert(result.error);
             }
         } catch (ex) {
-            console.log(ex);
+       
             alert('Failed to add vendor');
         }
     };

@@ -17,7 +17,6 @@ function CompanyEmployees() {
 
     useEffect(() => {
         const token = sessionStorage.getItem('token');
-        console.log(token)
         if (!token) {
             navigate('/company-login');
             return;
@@ -30,7 +29,7 @@ function CompanyEmployees() {
             const result = await getEmployees(token);
             setEmployees(result.data || []);
         } catch (ex) {
-            console.log('Failed to fetch employees');
+            console.error('Failed to fetch employees');
         }
         setLoading(false);
     };

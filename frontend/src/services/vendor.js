@@ -8,7 +8,7 @@ export async function getVendors(token) {
         });
         return response.data;
     } catch (ex) {
-        // console.log(ex);
+      
         throw ex;
     }
 }
@@ -22,7 +22,7 @@ export async function addVendor(vendorData, token) {
         });
         return response.data;
     } catch (ex) {
-        console.log(ex);
+   
         throw ex;
     }
 }

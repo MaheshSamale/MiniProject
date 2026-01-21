@@ -26,7 +26,7 @@ function CompanyRegister() {
                 formData.email, formData.phone, 
                 formData.password, formData.address
             );
-            console.log(result)
+      
             
             if (result.status == "success") {
                 alert('Company registered successfully!');

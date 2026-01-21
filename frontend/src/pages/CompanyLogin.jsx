@@ -16,7 +16,7 @@ function CompanyLogin() {
         setLoading(true);
         try {
             const result = await loginCompany(email, password);
-            console.log(result)
+           
             if (result.status == "success") {
                 sessionStorage.setItem('token', result.data.token);
                 sessionStorage.setItem('user', JSON.stringify(result.data));

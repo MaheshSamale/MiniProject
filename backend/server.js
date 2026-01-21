@@ -17,4 +17,4 @@ app.use('/api/company', authorizeUser, companyRoutes);
 app.use('/api/employee', authorizeUser, employeeRoutes);
 app.use('/api/vendor', authorizeUser, vendorRoutes);
 
-app.listen(4001, () => console.log('🚀 Server: http://localhost:4001'));
+app.listen(4001, () => console.log('Server running on 5000'));
