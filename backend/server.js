@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+
 const { authorizeUser } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const companyRoutes = require('./routes/company');
@@ -7,6 +8,7 @@ const employeeRoutes = require('./routes/employee');
 const vendorRoutes = require('./routes/vendor');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
