@@ -5,20 +5,22 @@ const { createResult } = require('../utils/result');
 function authorizeUser(req, res, next) {
   const token = req.headers.token || req.headers.authorization?.split(' ')[1];
   
-  if (req.url.includes('login') || req.url.includes('register')) return next();
+  // Skip public routes - FIXED: use req.originalUrl
+  if (req.originalUrl.includes('login') || req.originalUrl.includes('register')) return next();
 
   if (!token) {
-    return res.json(createResult(null, 'Token is Missing'));
+    return res.json(result.createResult(null, 'Token is Missing'));  // result. prefix
   }
 
   try {
     const payload = jwt.verify(token, config.SECRET);
-    req.user = payload;
+    req.user = payload;  // ✅ {id, companyId, role}
     next();
   } catch (ex) {
-    res.json(createResult('Invalid Token'));
+    res.json(result.createResult('Invalid Token'));
   }
 }
+
 
 function allowRoles(...roles) {
   return (req, res, next) => {
