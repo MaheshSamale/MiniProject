@@ -62,12 +62,13 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 60,
+    height: 70,
     backgroundColor: '#0b6ffd',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 15
+    paddingHorizontal: 15,
+    paddingTop:22
   },
 
   title: {
