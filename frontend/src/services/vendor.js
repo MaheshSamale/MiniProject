@@ -8,7 +8,7 @@ export async function getVendors(token) {
         });
         return response.data;
     } catch (ex) {
-        console.log(ex);
+        // console.log(ex);
         throw ex;
     }
 }

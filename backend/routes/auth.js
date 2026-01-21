@@ -33,7 +33,8 @@ router.post('/login', async (req, res) => {
                         role: data[0].role,
                         name: data[0].name,
                         email: data[0].email,
-                        phone: data[0].phone
+                        phone: data[0].phone,
+                        id: data[0].id
                     }
                     res.send(result.createResult(null, user))
                     console.log(user)

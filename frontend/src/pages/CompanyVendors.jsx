@@ -11,7 +11,7 @@ function CompanyVendors() {
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [formData, setFormData] = useState({
-        vendor_name: '', phone: '', location: ''
+        vendor_name: '', phone: '', location: '',user_id: ''
     });
 
     useEffect(() => {
@@ -45,9 +45,17 @@ function CompanyVendors() {
 
         try {
             const token = sessionStorage.getItem('token');
+            const storedUser = sessionStorage.getItem('user');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                formData.user_id = user.id;
+                console.log(formData);
+                
+            //    console.log( (JSON.parse(storedUser.id)));
+            }
+                 
             const result = await addVendor(formData, token);
-            
-            if (result.success) {
+            if (result.status == "success"){
                 alert('Vendor added successfully!');
                 setShowAddModal(false);
                 setFormData({ vendor_name: '', phone: '', location: '' });
@@ -56,6 +64,7 @@ function CompanyVendors() {
                 alert(result.error);
             }
         } catch (ex) {
+            console.log(ex);
             alert('Failed to add vendor');
         }
     };
