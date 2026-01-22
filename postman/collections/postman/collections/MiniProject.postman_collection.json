@@ -1,0 +1,551 @@
+{
+  "info": {
+    "_postman_id": "c33dee1a-5f18-4b14-b860-14edb47550d3",
+    "name": "MiniProject",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "company",
+      "item": [
+        {
+          "name": "Register-company",
+          "id": "22ce7a96-bbca-488b-84bd-10a3127344cc",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login-Company",
+          "id": "7cfc5c1f-3073-4c4c-84a4-7ea2ba46620c",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@techcorp.com\",\n  \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/auth/login",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Employee",
+          "id": "4db957c8-edfd-4dd1-9912-e8130ea3939f",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTYsImNvbXBhbnlJZCI6NSwicm9sZSI6IkNPTVBBTlkiLCJpYXQiOjE3Njg5OTgzODN9.aYWD05B5bYNrbhrzCf0t6SXzdV1jsutrMEJEKCVVRxU",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rutuja Jadhav sss\",\n  \"email\": \"rutujasss@phpd.com\",\n  \"phone\": \"9986543234\",\n  \"employee_code\": \"EMP012\",\n  \"department\": \"Engineering\",\n  \"designation\": \"Developer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/company/employees",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Employees",
+          "id": "da5ab8ad-43ce-4b56-bdcf-f53b7a09d290",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTYsImNvbXBhbnlJZCI6NSwicm9sZSI6IkNPTVBBTlkiLCJpYXQiOjE3Njg5OTgzODN9.aYWD05B5bYNrbhrzCf0t6SXzdV1jsutrMEJEKCVVRxU",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rutuja Jadhav sss\",\n  \"email\": \"rutujasss@phpd.com\",\n  \"phone\": \"9986543234\",\n  \"employee_code\": \"EMP012\",\n  \"department\": \"Engineering\",\n  \"designation\": \"Developer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/company/employees",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Venders",
+          "id": "fc773db9-14e3-49ca-b736-96139bab5f96",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTYsImNvbXBhbnlJZCI6NSwicm9sZSI6IkNPTVBBTlkiLCJpYXQiOjE3Njg5OTgzODN9.aYWD05B5bYNrbhrzCf0t6SXzdV1jsutrMEJEKCVVRxU",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rutuja Jadhav sss\",\n  \"email\": \"rutujasss@phpd.com\",\n  \"phone\": \"9986543234\",\n  \"employee_code\": \"EMP012\",\n  \"department\": \"Engineering\",\n  \"designation\": \"Developer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/company/employees",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Coupan Type",
+          "id": "fcbe0bbf-deec-45f4-91f6-28756d9515e0",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTYsImNvbXBhbnlJZCI6NSwicm9sZSI6IkNPTVBBTlkiLCJpYXQiOjE3Njg5OTgzODN9.aYWD05B5bYNrbhrzCf0t6SXzdV1jsutrMEJEKCVVRxU",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"coupon_name\": \"Standard Lunch\",\n    \"monthly_limit\": 22,\n    \"coupon_value\": 100.00\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/company/create-coupon-master",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "create-coupon-master"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign the Coupan on the Basis of type of coupan",
+          "id": "712e8080-d125-4291-97b8-0cf01fb98331",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTQsInJvbGUiOiJDT01QQU5ZIiwiY29tcGFueUlkIjo5LCJpYXQiOjE3NjkwMjk4NTB9.M8XGpQhrvHNYyVNofXtUQBq7xCRD-rGIAB6iQFZWAtc",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"employee_code\": \"EMP002\",\n    \"coupon_master_id\": 1,\n    \"quantity\": 10,\n    \"month_year\": \"2026-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/company/assign-coupon",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "assign-coupon"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Vender",
+          "id": "82485da1-f8f3-4acb-a9fa-20750e2d6a3e",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTQsInJvbGUiOiJDT01QQU5ZIiwiY29tcGFueUlkIjo5LCJpYXQiOjE3NjkwMjk4NTB9.M8XGpQhrvHNYyVNofXtUQBq7xCRD-rGIAB6iQFZWAtc",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Central Cafeteria\",\n    \"email\": \"vendor@cafeteria.com\",\n    \"phone\": \"5566778899\",\n    \"password\": \"VendorPass123\",\n    \"location\": \"Ground Floor, Block A\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/company/add-vendor",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "add-vendor"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vender Settlement",
+          "id": "adcb10f8-f97a-49c6-85b6-ec2a2f6ebe26",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTQsInJvbGUiOiJDT01QQU5ZIiwiY29tcGFueUlkIjo5LCJpYXQiOjE3NjkwMjk4NTB9.M8XGpQhrvHNYyVNofXtUQBq7xCRD-rGIAB6iQFZWAtc",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4001/api/company/reports/vendor-settlement",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "reports",
+                "vendor-settlement"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Employee",
+          "id": "7208173e-fd0a-48b7-ab74-03f5f836d2b3",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTQsInJvbGUiOiJDT01QQU5ZIiwiY29tcGFueUlkIjo5LCJpYXQiOjE3NjkwMjk4NTB9.M8XGpQhrvHNYyVNofXtUQBq7xCRD-rGIAB6iQFZWAtc",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4001/api/company/reports/vendor-settlement",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "reports",
+                "vendor-settlement"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard",
+          "id": "fd143f88-e822-4082-a8ab-608e7fb0bf6b",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTQsInJvbGUiOiJDT01QQU5ZIiwiY29tcGFueUlkIjo5LCJpYXQiOjE3NjkwMjk4NTB9.M8XGpQhrvHNYyVNofXtUQBq7xCRD-rGIAB6iQFZWAtc",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4001/api/company/reports/vendor-settlement",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "company",
+                "reports",
+                "vendor-settlement"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "46d75054-a61a-4ed0-af08-9e6010c677f5"
+    },
+    {
+      "name": "Employee",
+      "item": [
+        {
+          "name": "Login",
+          "id": "2d9618ea-6253-41e1-a719-e8a47691b81a",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rutujassss@phpd.com\",\n  \"password\":  \"pass@EMP013\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "See the coupans",
+          "id": "fb66e607-d833-436c-890d-d55f6ad95b29",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NDksInJvbGUiOiJFTVBMT1lFRSIsImNvbXBhbnlJZCI6OCwiaWF0IjoxNzY5MDI3NzE3fQ.iNlA86XgFi3kl5Tb1kdyWbNGfxr8OkeYPWY5LWJhKFA",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4001/api/employee/my-coupons",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "employee",
+                "my-coupons"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Redeem Coupans",
+          "id": "38eebb6a-9bba-4dbc-b148-08dce33fbdbd",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTcsInJvbGUiOiJFTVBMT1lFRSIsImNvbXBhbnlJZCI6OSwiaWF0IjoxNzY5MDMwMzM4fQ.5LbhEvlGFttArCyf1k1lPOEFH-KZkV3rCYm2BqjCFPE",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vendor_id\": 2,\n    \"coupon_master_id\": 5,\n    \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/employee/redeem?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTcsInJvbGUiOiJFTVBMT1lFRSIsImNvbXBhbnlJZCI6OSwiaWF0IjoxNzY5MDMwMzM4fQ.5LbhEvlGFttArCyf1k1lPOEFH-KZkV3rCYm2BqjCFPE",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "employee",
+                "redeem"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTcsInJvbGUiOiJFTVBMT1lFRSIsImNvbXBhbnlJZCI6OSwiaWF0IjoxNzY5MDMwMzM4fQ.5LbhEvlGFttArCyf1k1lPOEFH-KZkV3rCYm2BqjCFPE"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "d74a73c2-493f-4e5c-97a9-20743449524a"
+    },
+    {
+      "name": "Vender",
+      "item": [
+        {
+          "name": "Vender-Login",
+          "id": "8b9eab79-99cf-48a5-bd4d-66f7efc15c76",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4001/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4001",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Transaction History",
+          "id": "86ffcf87-b147-410e-8181-d573e3722eaf",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTYsInJvbGUiOiJWRU5ET1IiLCJjb21wYW55SWQiOjksImlhdCI6MTc2OTAzMDYwNn0.9Tfa1AaKj7uyZswY4fqUBikdjXd2xavVAUobIy3zWLs",
+                "type": "text"
+              }
+            ]
+          },
+          "response": []
+        },
+        {
+          "name": "New Request Copy",
+          "id": "d583c982-d4f8-4197-966b-0ef744fde021",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTYsInJvbGUiOiJWRU5ET1IiLCJjb21wYW55SWQiOjksImlhdCI6MTc2OTAzMDYwNn0.9Tfa1AaKj7uyZswY4fqUBikdjXd2xavVAUobIy3zWLs",
+                "type": "text"
+              }
+            ]
+          },
+          "response": []
+        }
+      ],
+      "id": "730f3c60-b7be-4e97-bab3-5c82559e9acc"
+    }
+  ],
+  "variable": [
+    {
+      "id": "a341927d-3f7d-4a46-a20b-9f05ac8b9928",
+      "key": "URL",
+      "value": ""
+    }
+  ]
+}
