@@ -18,13 +18,13 @@ function Home() {
 
             switch (route.name) {
               case 'Dashboard':
-                iconName = 'list-outline'
+                iconName = 'apps'
                 break
               case 'Employee':
-                iconName = 'add-circle-outline'
+                iconName = 'people-circle-outline'
                 break
               case 'Vendor':
-                iconName = 'grid-outline'
+                iconName = 'fast-food'
                 break
             }
 

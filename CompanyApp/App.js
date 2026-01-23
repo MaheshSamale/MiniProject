@@ -2,7 +2,8 @@ import { StyleSheet } from 'react-native'
 import { createContext, useState } from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { NavigationContainer } from '@react-navigation/native'
-
+import AddVendor from './src/screens/AddVender'
+import AddEmployee from './src/screens/AddEmployee'
 import CompanySignIn from './src/screens/auth/CompanySignIn'
 import CompanySignUp from './src/screens/auth/CompanySignUp'
 import Home from './src/screens/Home'
@@ -24,7 +25,11 @@ export default function App() {
               <Stack.Screen name="CompanySignUp" component={CompanySignUp} />
             </>
           ) : (
-            <Stack.Screen name="Home" component={Home} />
+            <>
+              <Stack.Screen name="Home" component={Home} />
+              <Stack.Screen name="AddEmployee" component={AddEmployee} />
+              <Stack.Screen name="AddVendor" component={AddVendor} />
+            </>
           )}
         </Stack.Navigator>
       </NavigationContainer>

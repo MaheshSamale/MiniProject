@@ -15,12 +15,11 @@ function CompanySignUp({ navigation }) {
       
         const result = await registerCompany(company_name, name, email, phone, password, address)
         if (result.status == 'success') {
-          console.log(result);
             Alert.alert('Signup Successful')
             navigation.goBack()
         }
         else
-            Alert.alert('Error', result.error)
+            Alert.error(result.error)
     }
     return (
         <View style={styles.container}>

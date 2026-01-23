@@ -17,10 +17,8 @@ export async function loginCompany(email, password) {
 export async function registerCompany(company_name, name, email, phone, password, address) {
     try {
         const url = config.BASE_URL + '/auth/register-company';
-        console.log(url);
         const body = { company_name, name, email, phone, password, address };
         const response = await axios.post(url, body);
-        console.log(response.data);
         return response.data;
     } catch (ex) {
         console.log(ex);
