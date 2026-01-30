@@ -118,7 +118,7 @@ router.post('/add-vendor', async (req, res) => {
 // GET ROUTES (Vendors/Employees)
 router.get('/employees', async (req, res) => {
     const [rows] = await pool.query(
-        `SELECT e.id as employee_id, e.employee_code, u.name, u.email, e.department FROM employees e JOIN users u ON e.user_id = u.id WHERE e.company_id = ?`,
+        `SELECT e.id as employee_id, e.employee_code, u.name, u.email, e.department FROM employees e JOIN users u ON e.user_id = u.id WHERE e.company_id = ? AND u.status = 1`,
         [req.user.companyId]
     );
     res.json(createResult(null, rows));
@@ -130,7 +130,7 @@ router.get('/vendors', async (req, res) => {
           `SELECT v.id as vendor_id, v.vendor_name, u.email, v.location, v.status 
            FROM vendors v 
            JOIN users u ON v.user_id = u.id 
-           WHERE v.company_id = ?`,
+           WHERE v.company_id = ? AND u.status = 1`,
           [req.user.companyId]
       );
       res.json(createResult(null, rows));
@@ -143,11 +143,14 @@ router.get('/vendors', async (req, res) => {
 router.post('/create-coupon-master', async (req, res) => {
     try {
         const { coupon_name, monthly_limit, coupon_value } = req.body;
-        await pool.query(
+        const [result] = await pool.query(
             `INSERT INTO coupon_master (company_id, coupon_name, monthly_limit, coupon_value) VALUES (?, ?, ?, ?)`,
             [req.user.companyId, coupon_name, monthly_limit, coupon_value]
         );
-        res.json(createResult(null, "Coupon Master created"));
+        res.json(createResult(null, { 
+            id: result.insertId,
+            message: 'Coupon master created successfully'
+        }));
     } catch (err) {
         res.json(createResult(err.message));
     }
@@ -192,26 +195,41 @@ router.get('/reports/vendor-settlement', async (req, res) => {
 
 
 
-// Company Admin Dashboard Statistics
+// Company Admin Dashboard Statistics (Active Only)
 router.get('/dashboard/summary', async (req, res) => {
   try {
       const companyId = req.user.companyId;
 
-      // Query to get overall stats
+      // UPDATED: Added JOIN users u and WHERE u.status = 1 to filter out deleted/inactive entities
       const statsSql = `
           SELECT 
-              (SELECT COUNT(*) FROM employees WHERE company_id = ?) as total_employees,
-              (SELECT COUNT(*) FROM vendors WHERE company_id = ?) as total_vendors,
-              (SELECT IFNULL(SUM(remaining), 0) FROM employee_coupons ec 
+              (SELECT COUNT(*) 
+               FROM employees e 
+               JOIN users u ON e.user_id = u.id 
+               WHERE e.company_id = ? AND u.status = 1) as total_employees,
+
+              (SELECT COUNT(*) 
+               FROM vendors v 
+               JOIN users u ON v.user_id = u.id 
+               WHERE v.company_id = ? AND u.status = 1) as total_vendors,
+
+              (SELECT IFNULL(SUM(ec.remaining), 0) 
+               FROM employee_coupons ec 
                JOIN employees e ON ec.employee_id = e.id 
-               WHERE e.company_id = ?) as total_coupons_in_wallets,
-              (SELECT IFNULL(SUM(coupons_used), 0) FROM coupon_transactions 
+               JOIN users u ON e.user_id = u.id 
+               WHERE e.company_id = ? AND u.status = 1) as total_coupons_in_wallets,
+
+              (SELECT IFNULL(SUM(coupons_used), 0) 
+               FROM coupon_transactions 
                WHERE company_id = ?) as total_coupons_redeemed_ever
       `;
 
+      // Parameters: companyId is used 4 times
       const [stats] = await pool.query(statsSql, [companyId, companyId, companyId, companyId]);
 
       // Query to get recent 5 transactions for the "Activity Feed"
+      // (Note: History is usually kept even if user is deleted, so we typically don't filter status here 
+      // to maintain audit trails, but you can add 'AND u.status = 1' if you want to hide their history too)
       const recentActivitySql = `
           SELECT 
               u.name as employee_name,
@@ -236,7 +254,6 @@ router.get('/dashboard/summary', async (req, res) => {
       res.status(500).json(createResult(err.message));
   }
 });
-
 
 
 // Search Employees by Name, Email, or Employee Code
@@ -271,6 +288,151 @@ router.get('/employees/search', async (req, res) => {
   } catch (err) {
       res.status(500).json(createResult(err.message));
   }
+});
+
+// Get Single Employee by ID
+router.get('/employees/:id', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const employeeId = req.params.id;
+
+        const sql = `
+            SELECT 
+                e.id as employee_id, 
+                e.employee_code, 
+                u.name, 
+                u.email, 
+                u.phone, 
+                e.department, 
+                e.designation, 
+                u.status
+            FROM employees e
+            JOIN users u ON e.user_id = u.id
+            WHERE e.id = ? AND e.company_id = ?`;
+
+        const [rows] = await pool.query(sql, [employeeId, companyId]);
+
+        if (rows.length === 0) {
+            return res.json(createResult("Employee not found or does not belong to your company."));
+        }
+
+        res.json(createResult(null, rows[0]));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// Get Single Vendor by ID
+router.get('/vendors/:id', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const vendorId = req.params.id;
+
+        const sql = `
+            SELECT 
+                v.id as vendor_id, 
+                v.vendor_name, 
+                u.email, 
+                u.phone, 
+                v.location, 
+                v.status
+            FROM vendors v
+            JOIN users u ON v.user_id = u.id
+            WHERE v.id = ? AND v.company_id = ?`;
+
+        const [rows] = await pool.query(sql, [vendorId, companyId]);
+
+        if (rows.length === 0) {
+            return res.json(createResult("Vendor not found or does not belong to your company."));
+        }
+
+        res.json(createResult(null, rows[0]));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// Soft Delete (Deactivate) Employee
+// DELETE EMPLOYEE (Debug Version)
+router.delete('/employees/:id', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const companyId = req.user.companyId;
+        const employeeId = req.params.id;
+
+        // 1. Verify Employee Exists & Get User ID
+        const [empRows] = await connection.query(
+            "SELECT id, user_id FROM employees WHERE id = ? AND company_id = ?",
+            [employeeId, companyId]
+        );
+
+        if (empRows.length === 0) {
+            console.log("[DEBUG] Employee not found in this company.");
+            return res.status(404).json(createResult("Employee not found or unauthorized."));
+        }
+
+        const userId = empRows[0].user_id;
+      
+
+        // 2. Perform Soft Delete (Set status = 0)
+        // We update BOTH tables to be safe
+        await connection.beginTransaction();
+
+        const [userUpdate] = await connection.query("UPDATE users SET status = 0 WHERE id = ?", [userId]);
+
+
+        // Optional: Mark employee record as inactive if you have a status column there too
+        // const [empUpdate] = await connection.query("UPDATE employees SET status = 0 WHERE id = ?", [employeeId]);
+
+        await connection.commit();
+
+        if (userUpdate.affectedRows > 0) {
+            res.json(createResult(null, "Employee deleted successfully (Soft Delete)."));
+        } else {
+            res.json(createResult("Failed to update status. User might already be inactive."));
+        }
+
+    } catch (err) {
+        await connection.rollback();
+        res.status(500).json(createResult(err.message));
+    } finally {
+        connection.release();
+    }
+});
+
+// Soft Delete (Deactivate) Vendor
+router.delete('/vendors/:id', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const vendorId = req.params.id;
+
+        // Step 1: Find the User ID associated with this Vendor and validate Company ID
+        const [vendorRows] = await pool.query(
+            "SELECT user_id FROM vendors WHERE id = ? AND company_id = ?",
+            [vendorId, companyId]
+        );
+
+        if (vendorRows.length === 0) {
+            return res.json(createResult("Vendor not found or does not belong to your company."));
+        }
+
+        const userId = vendorRows[0].user_id;
+
+        // Step 2: Update the User status directly
+        const [updateResult] = await pool.query(
+            "UPDATE users SET status = 0 WHERE id = ?",
+            [userId]
+        );
+
+        if (updateResult.affectedRows === 0) {
+            return res.json(createResult("Failed to deactivate vendor (User might already be inactive)."));
+        }
+
+        res.json(createResult(null, "Vendor deactivated successfully."));
+    } catch (err) {
+        console.error("Delete Vendor Error:", err);
+        res.status(500).json(createResult(err.message));
+    }
 });
 
 module.exports = router;
