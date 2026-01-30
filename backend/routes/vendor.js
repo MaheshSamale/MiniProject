@@ -32,4 +32,26 @@ router.get('/my-transactions', async (req, res) => {
     }
 });
 
+// Get Vendor Profile for QR Generation
+router.get('/profile', async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const sql = `SELECT id, vendor_name, company_id, location FROM vendors WHERE user_id = ?`;
+        const [rows] = await pool.query(sql, [userId]);
+        
+        if (rows.length === 0) return res.json(createResult("Vendor not found"));
+        
+        // The QR Data the Employee will scan
+        const qrData = JSON.stringify({
+            vendor_id: rows[0].id,
+            company_id: rows[0].company_id,
+            vendor_name: rows[0].vendor_name
+        });
+
+        res.json(createResult(null, { ...rows[0], qrData }));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
 module.exports = router;

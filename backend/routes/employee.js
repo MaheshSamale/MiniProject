@@ -30,7 +30,8 @@ router.get('/my-coupons', async (req, res) => {
   }
 });
 
-// 2. Redeem Coupon (With double-check on Company ID)
+
+// 2. Redeem Coupon (Fixed for Generated Columns)
 router.post('/redeem', async (req, res) => {
     const connection = await pool.getConnection();
     try {
@@ -57,6 +58,8 @@ router.post('/redeem', async (req, res) => {
         if (vendorCheck.length === 0) throw new Error("This vendor is not authorized for your company.");
 
         // 3. Check Wallet
+        // We still check 'remaining' here because we need to know if they HAVE enough,
+        // but we don't try to UPDATE it manually later.
         const [wallet] = await connection.query(
             "SELECT id, remaining FROM employee_coupons WHERE employee_id = ? AND coupon_master_id = ? AND remaining >= ? FOR UPDATE",
             [employeeId, coupon_master_id, quantity]
@@ -65,9 +68,11 @@ router.post('/redeem', async (req, res) => {
         if (wallet.length === 0) throw new Error("Insufficient coupon balance.");
 
         // 4. Execute Transaction
+        // FIX: Removed 'remaining = remaining - ?'. 
+        // Just increment 'used'. The DB handles the 'remaining' math.
         await connection.query(
-            "UPDATE employee_coupons SET used = used + ?, remaining = remaining - ? WHERE id = ?",
-            [quantity, quantity, wallet[0].id]
+            "UPDATE employee_coupons SET used = used + ? WHERE id = ?",
+            [quantity, wallet[0].id]
         );
 
         await connection.query(
@@ -85,5 +90,4 @@ router.post('/redeem', async (req, res) => {
         connection.release();
     }
 });
-
 module.exports = router;

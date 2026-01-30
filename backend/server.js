@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { authorizeUser } = require('./middleware/auth');
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/authUsers');
 const companyRoutes = require('./routes/company');
 const employeeRoutes = require('./routes/employee');
 const vendorRoutes = require('./routes/vendor');

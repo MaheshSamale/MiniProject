@@ -60,6 +60,7 @@ router.post('/add-employee', async (req, res) => {
 });
 
 // Assign Coupon (Fixed with TRIM and Company Validation)
+// Assign Coupon (Fixed: Removed 'remaining' as it is a Generated Column)
 router.post('/assign-coupon', async (req, res) => {
     try {
         const { employee_code, coupon_master_id, quantity, month_year } = req.body;
@@ -72,7 +73,7 @@ router.post('/assign-coupon', async (req, res) => {
         );
 
         if (empRows.length === 0) {
-            return res.json(createResult(`Employee code '${employee_code}' not found for your company (ID: ${company_id}).`));
+            return res.json(createResult(`Employee code '${employee_code}' not found.`));
         }
 
         const employee_id = empRows[0].id;
@@ -87,15 +88,14 @@ router.post('/assign-coupon', async (req, res) => {
             return res.json(createResult("Access Denied: This coupon type does not belong to your company."));
         }
 
-        // 3. Upsert Allocation
+        // 3. Upsert Allocation (Removed 'remaining' from columns and values)
         const sql = `
-            INSERT INTO employee_coupons (employee_id, coupon_master_id, month_year, allocated, remaining)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO employee_coupons (employee_id, coupon_master_id, month_year, allocated)
+            VALUES (?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
-            allocated = allocated + VALUES(allocated),
-            remaining = remaining + VALUES(allocated)`;
+            allocated = allocated + VALUES(allocated)`;
 
-        await pool.query(sql, [employee_id, coupon_master_id, month_year, quantity, quantity]);
+        await pool.query(sql, [employee_id, coupon_master_id, month_year, quantity]);
 
         res.json(createResult(null, `Successfully assigned ${quantity} coupons to ${employee_code}`));
     } catch (err) {
@@ -431,6 +431,111 @@ router.delete('/vendors/:id', async (req, res) => {
         res.json(createResult(null, "Vendor deactivated successfully."));
     } catch (err) {
         console.error("Delete Vendor Error:", err);
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+
+// 1. Get All Coupon Master records (Inventory)
+// Useful for populating dropdowns when assigning coupons
+router.get('/coupons/master', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const [rows] = await pool.query(
+            "SELECT id, coupon_name, monthly_limit, coupon_value FROM coupon_master WHERE company_id = ?",
+            [companyId]
+        );
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// 2. Get Assigned Coupons for a Specific Employee
+// Shows what an employee has in their wallet (Allocated vs Remaining)
+router.get('/employees/:id/coupons', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const employeeId = req.params.id;
+
+        const sql = `
+            SELECT 
+                ec.id as allocation_id,
+                cm.coupon_name,
+                ec.month_year,
+                ec.allocated,
+                ec.remaining,
+                (ec.allocated - ec.remaining) as used
+            FROM employee_coupons ec
+            JOIN coupon_master cm ON ec.coupon_master_id = cm.id
+            JOIN employees e ON ec.employee_id = e.id
+            WHERE e.id = ? AND e.company_id = ?
+            ORDER BY ec.month_year DESC`;
+
+        const [rows] = await pool.query(sql, [employeeId, companyId]);
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// 3. Get Redemption Details for a Specific Vendor
+// Detailed log of every scan a vendor has performed
+router.get('/vendors/:id/redemptions', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const vendorId = req.params.id;
+
+        const sql = `
+            SELECT 
+                ct.id as transaction_id,
+                u.name as employee_name,
+                e.employee_code,
+                cm.coupon_name,
+                ct.coupons_used,
+                (ct.coupons_used * cm.coupon_value) as monetary_value,
+                ct.redeemed_at
+            FROM coupon_transactions ct
+            JOIN employees e ON ct.employee_id = e.id
+            JOIN users u ON e.user_id = u.id
+            JOIN coupon_master cm ON ct.coupon_master_id = cm.id
+            WHERE ct.vendor_id = ? AND ct.company_id = ?
+            ORDER BY ct.redeemed_at DESC`;
+
+        const [rows] = await pool.query(sql, [vendorId, companyId]);
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// 4. Detailed Settlement API (Daily Breakdown for a Vendor)
+// Useful for the accounting department to verify billing
+router.get('/reports/vendor-daily-settlement', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const { vendor_id, month_year } = req.query; // e.g. ?vendor_id=5&month_year=2026-01
+
+        if (!vendor_id || !month_year) {
+            return res.json(createResult("Provide vendor_id and month_year (YYYY-MM)"));
+        }
+
+        const sql = `
+            SELECT 
+                DATE(ct.redeemed_at) as date,
+                COUNT(ct.id) as transaction_count,
+                SUM(ct.coupons_used) as total_coupons,
+                SUM(ct.coupons_used * cm.coupon_value) as total_value
+            FROM coupon_transactions ct
+            JOIN coupon_master cm ON ct.coupon_master_id = cm.id
+            WHERE ct.vendor_id = ? AND ct.company_id = ? 
+            AND DATE_FORMAT(ct.redeemed_at, '%Y-%m') = ?
+            GROUP BY DATE(ct.redeemed_at)
+            ORDER BY date ASC`;
+
+        const [rows] = await pool.query(sql, [vendor_id, companyId, month_year]);
+        res.json(createResult(null, rows));
+    } catch (err) {
         res.status(500).json(createResult(err.message));
     }
 });
