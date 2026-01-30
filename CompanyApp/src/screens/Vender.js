@@ -7,16 +7,18 @@ import {
   FlatList,
   TextInput,
   StatusBar,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons'
 import { useFocusEffect } from '@react-navigation/native';
-import { getAllVendors } from '../services/company';
+import { getAllVendors, deleteVendor } from '../services/company'; // Ensure deleteVendor is imported
 
 function Vendor({ navigation }) {
   const [allVendors, setAllVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -25,18 +27,48 @@ function Vendor({ navigation }) {
   );
 
   const getVendors = async () => {
+    setLoading(true);
     try {
       const result = await getAllVendors();
       if (result.status === "success") {
         setAllVendors(result.data);
         setFilteredVendors(result.data);
       } else {
-        Alert.alert('Error', result.error || 'Failed to fetch vendors');
+        // Silent fail or simple log to avoid spamming alerts on refresh
+        console.log(result.error);
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleDelete = (id, name) => {
+    Alert.alert(
+      "Delete Vendor",
+      `Are you sure you want to remove ${name}? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              const result = await deleteVendor(id);
+              if (result.status === 'success') {
+                Alert.alert("Success", "Vendor deleted successfully");
+                getVendors(); // Refresh list
+              } else {
+                Alert.alert("Error", result.error || "Failed to delete");
+              }
+            } catch (error) {
+              Alert.alert("Error", "Could not delete vendor");
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleSearch = (text) => {
@@ -46,7 +78,6 @@ function Vendor({ navigation }) {
         const itemData = item.vendor_name ? item.vendor_name.toUpperCase() : ''.toUpperCase();
         const locData = item.location ? item.location.toUpperCase() : ''.toUpperCase();
         const textData = text.toUpperCase();
-        
         return itemData.includes(textData) || locData.includes(textData);
       });
       setFilteredVendors(newData);
@@ -69,7 +100,7 @@ function Vendor({ navigation }) {
     <TouchableOpacity 
       style={styles.card}
       activeOpacity={0.7}
-      // onPress={() => navigation.navigate('VendorDetails', { id: item.vendor_id })}
+      onPress={() => navigation.navigate('VendorDetails', { id: item.vendor_id })}
     >
       <View style={styles.avatarContainer}>
         <Text style={styles.avatarText}>{getInitials(item.vendor_name)}</Text>
@@ -85,7 +116,13 @@ function Vendor({ navigation }) {
         </View>
       </View>
 
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
+      {/* Delete Button */}
+      <TouchableOpacity 
+        style={styles.deleteBtn}
+        onPress={() => handleDelete(item.vendor_id, item.vendor_name)}
+      >
+        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -133,11 +170,15 @@ function Vendor({ navigation }) {
         keyExtractor={(item) => item.vendor_id ? item.vendor_id.toString() : Math.random().toString()}
         renderItem={renderVendorItem}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={getVendors}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="business-outline" size={60} color="#ddd" />
-            <Text style={styles.emptyText}>No vendors found</Text>
-          </View>
+          !loading && (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="business-outline" size={60} color="#ddd" />
+              <Text style={styles.emptyText}>No vendors found</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -151,9 +192,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 25,
     paddingHorizontal: 20,
-    backgroundColor: '#4F46E5', // Consistent Brand Color
+    backgroundColor: '#4F46E5', 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -185,7 +226,8 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 20,
-    marginTop: -10,
+    marginTop: -20,
+    zIndex: 10,
   },
   searchBar: {
     flexDirection: 'row',
@@ -211,7 +253,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 25, // Adjusted for overlapping search bar
     paddingBottom: 30,
   },
   card: {
@@ -230,7 +272,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 50,
     height: 50,
-    borderRadius: 14, // Slightly squarer for businesses/vendors
+    borderRadius: 14, 
     backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -269,6 +311,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4B5563',
     fontWeight: '500',
+  },
+  deleteBtn: {
+    padding: 8,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
   },
   emptyContainer: {
     alignItems: 'center',

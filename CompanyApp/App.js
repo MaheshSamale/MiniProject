@@ -10,6 +10,7 @@ import Home from './src/screens/Home'
 import EmployeeDetails from './src/screens/EmployeeDetails'
 import CreateCoupon from './src/screens/CreateCoupon'
 import AssignCoupon from './src/screens/AssignCoupon'
+import VendorDetails from './src/screens/VendorDetails'
 
 export const CompanyContext = createContext()
 
@@ -34,7 +35,8 @@ export default function App() {
               <Stack.Screen name="AddVendor" component={AddVendor} />
               <Stack.Screen name='EmployeeDetails' component={EmployeeDetails}/>
               <Stack.Screen name='AssignCoupon' component={AssignCoupon}/>
-               <Stack.Screen name='CreateCoupon' component={CreateCoupon}/>
+              <Stack.Screen name='CreateCoupon' component={CreateCoupon}/>
+              <Stack.Screen name='VendorDetails' component={VendorDetails}/>
 
             </>
           )}

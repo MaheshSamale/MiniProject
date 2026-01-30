@@ -32,18 +32,32 @@ export async function registerVendor( name, email, phone, password, location) {
     }
 }
 
+
 export async function getDashboardSummary() {
-    const url = config.BASE_URL + '/company/dashboard/summary'
-    const headers = {
-        token: await AsyncStorage.getItem('token')
+  const url = config.BASE_URL + '/company/dashboard/summary';
+  const token = await AsyncStorage.getItem('token');
+  
+  try {
+    const response = await axios.get(url, {
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // Handle your API's createResult format
+    if (response.data.status === 'success') {
+      return response.data.data; // Return {statistics, recent_activity}
+    } else {
+      throw new Error(response.data.error || 'API Error');
     }
-    try {
-        const response = await axios.get(url, {headers})
-        return response.data
-    } catch (error) {
-        Alert.error(error)
-    }
+  } catch (error) {
+    console.error('Dashboard API Error:', error.response?.data || error.message);
+    Alert.alert('Error', error.response?.data?.error || 'Failed to load dashboard');
+    throw error;
+  }
 }
+
 
 export async function getAllEmployees() {
     const url = config.BASE_URL + '/company/employees'
@@ -193,6 +207,93 @@ export async function deleteVendor(id) {
     } catch (ex) {
         console.log(ex);
         return { status: 'error', error: 'Failed to delete vendor' };
+    }
+}
+
+// 1. Get All Coupon Master records (Inventory)
+// Endpoint: GET /coupons/master
+export async function getAllCouponsMaster() {
+    try {
+        const url = `${config.BASE_URL}/company/coupons/master`;
+        const headers = {
+            token: await AsyncStorage.getItem('token')
+        };
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (ex) {
+        console.log(ex);
+        Alert.alert('Error', 'Failed to fetch coupon types');
+        return null;
+    }
+}
+
+// 2. Get Assigned Coupons for a Specific Employee (Wallet)
+// Endpoint: GET /employees/:id/coupons
+export async function getEmployeeCoupons(employeeId) {
+    try {
+        const url = `${config.BASE_URL}/company/employees/${employeeId}/coupons`;
+        const headers = {
+            token: await AsyncStorage.getItem('token')
+        };
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (ex) {
+        console.log(ex);
+        Alert.alert('Error', 'Failed to fetch employee wallet');
+        return null;
+    }
+}
+
+// 3. Get Redemption Details for a Specific Vendor
+// Endpoint: GET /vendors/:id/redemptions
+export async function getVendorRedemptions(vendorId) {
+    try {
+        const url = `${config.BASE_URL}/company/vendors/${vendorId}/redemptions`;
+        const headers = {
+            token: await AsyncStorage.getItem('token')
+        };
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (ex) {
+        console.log(ex);
+        Alert.alert('Error', 'Failed to fetch vendor redemptions');
+        return null;
+    }
+}
+
+// 4. Detailed Settlement API (Daily Breakdown for a Vendor)
+// Endpoint: GET /reports/vendor-daily-settlement
+export async function getVendorDailySettlement(vendorId, monthYear) {
+    try {
+        // monthYear should be in 'YYYY-MM' format
+        const url = `${config.BASE_URL}/company/reports/vendor-daily-settlement?vendor_id=${vendorId}&month_year=${monthYear}`;
+        const headers = {
+            token: await AsyncStorage.getItem('token')
+        };
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (ex) {
+        console.log(ex);
+        Alert.alert('Error', 'Failed to fetch daily settlement report');
+        return null;
+    }
+}
+
+// Delete Coupon Master
+export async function deleteCouponMaster(id) {
+    try {
+        const url = `${config.BASE_URL}/company/coupons/master/${id}`;
+        const headers = {
+            token: await AsyncStorage.getItem('token')
+        };
+        const response = await axios.delete(url, { headers });
+        return response.data;
+    } catch (ex) {
+        console.log(ex);
+        if (ex.response && ex.response.data) {
+            return ex.response.data; 
+        }
+        return { status: 'error', error: 'Failed to delete coupon type' };
     }
 }
 

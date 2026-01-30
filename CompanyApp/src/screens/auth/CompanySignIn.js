@@ -12,7 +12,6 @@ import {
   ScrollView,
   ActivityIndicator
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@react-native-vector-icons/ionicons'
 import { CompanyContext } from '../../../App';

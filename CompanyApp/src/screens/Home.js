@@ -1,12 +1,14 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@react-native-vector-icons/ionicons'
+// Correct Import for Ionicons (Default export)
+import { Ionicons } from '@react-native-vector-icons/ionicons'; 
 
 // Import Screens
 import Employee from './Employee';
 import Vendor from './Vender';
 import Dashboard from './Dashboard';
+import Coupan from './Coupon'; 
 
 const Tab = createBottomTabNavigator();
 
@@ -16,36 +18,41 @@ function Home() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarHideOnKeyboard: true, // Hides tab bar when typing
+          tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
           
-          // Active/Inactive Colors
+          // Colors
           tabBarActiveTintColor: '#4F46E5', // Indigo
           tabBarInactiveTintColor: '#9CA3AF', // Gray
           
-          // Text Styling
+          // Label Style
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: '600',
             marginBottom: 5,
           },
 
-          // Standard Bottom Bar Style
+          // 👇 FLOATING TAB BAR STYLES
           tabBarStyle: {
+            position: 'absolute',
+            bottom: 25,     // Float 25px from bottom
+            left: 20,       // Margin from left
+            right: 20,      // Margin from right
+            elevation: 5,   // Android Shadow
             backgroundColor: '#ffffff',
-            height: 80, // Slightly taller for better touch targets
-            borderTopWidth: 1,
-            borderTopColor: '#F3F4F6', // Subtle separator line
-            paddingBottom: 15, // Spacing from bottom
-            paddingTop: 8,    // Spacing from top of bar
-            elevation: 8,     // Subtle shadow for Android
-            shadowColor: '#000', // Shadow for iOS
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
+            borderRadius: 15, // Rounded corners
+            height: 70,     // Height of the floating bar
+            borderTopWidth: 0, // Remove top line
+            
+            // iOS Shadow
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            paddingBottom: 5, 
           },
 
-          // Icon Configuration
+          // Icon Logic
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
 
@@ -55,15 +62,20 @@ function Home() {
               iconName = focused ? 'people' : 'people-outline';
             } else if (route.name === 'Vendor') {
               iconName = focused ? 'storefront' : 'storefront-outline';
-            }
-
-            return <Ionicons name={iconName} size={24} color={color} />;
+            } else if (route.name === 'Coupan') { 
+              iconName = focused ? 'ticket' : 'ticket-outline';
+            }  
+            
+            // Ensure we have a valid icon
+            return <Ionicons name={iconName || 'help-circle'} size={24} color={color} />;
           },
         })}
       >
         <Tab.Screen name="Dashboard" component={Dashboard} />
         <Tab.Screen name="Employee" component={Employee} />
         <Tab.Screen name="Vendor" component={Vendor} />
+        <Tab.Screen name="Coupan" component={Coupan} />
+
       </Tab.Navigator>
     </View>
   );

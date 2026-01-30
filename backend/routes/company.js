@@ -540,4 +540,96 @@ router.get('/reports/vendor-daily-settlement', async (req, res) => {
     }
 });
 
+// DELETE Coupon Master (Inventory Type)
+router.delete('/coupons/master/:id', async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const couponId = req.params.id;
+
+        // 1. Verify ownership (Ensure this coupon belongs to your company)
+        const [check] = await pool.query(
+            "SELECT id FROM coupon_master WHERE id = ? AND company_id = ?",
+            [couponId, companyId]
+        );
+
+        if (check.length === 0) {
+            return res.json(createResult("Coupon type not found or unauthorized."));
+        }
+
+        // 2. Attempt Delete
+        await pool.query("DELETE FROM coupon_master WHERE id = ?", [couponId]);
+
+        res.json(createResult(null, "Coupon type deleted successfully."));
+
+    } catch (err) {
+        // Handle Foreign Key Constraint Error (Error Code 1451 in MySQL)
+        if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {
+            return res.status(400).json(createResult(
+                "Cannot delete: This coupon type has already been assigned to employees or used in transactions."
+            ));
+        }
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// Company Admin Dashboard Statistics - FULLY COMPATIBLE WITH YOUR REACT NATIVE
+router.get('/dashboard/summary', async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+
+    // 1. CORE STATISTICS (matches your React Native exactly)
+    const statsSql = `
+      SELECT 
+        (SELECT COUNT(*) FROM employees WHERE company_id = ?) as total_employees,
+        (SELECT COUNT(*) FROM vendors WHERE company_id = ? AND status = 1) as total_vendors,
+        (SELECT IFNULL(SUM(allocated - used), 0) FROM employee_coupons ec 
+         JOIN employees e ON ec.employee_id = e.id 
+         WHERE e.company_id = ?) as total_coupons_in_wallets,
+        (SELECT IFNULL(SUM(coupons_used), 0) FROM coupon_transactions 
+         WHERE company_id = ?) as total_coupons_redeemed_ever
+    `;
+
+    const [stats] = await pool.query(statsSql, [companyId, companyId, companyId, companyId]);
+
+    // 2. RECENT ACTIVITY (5 most recent redemptions with descriptions)
+    const recentActivitySql = `
+      SELECT 
+        u.name as employee_name,
+        e.employee_code,
+        v.vendor_name,
+        cm.coupon_name,
+        ct.coupons_used,
+        ROUND(ct.coupons_used * cm.coupon_value, 2) as amount,
+        DATE_FORMAT(ct.redeemed_at, '%b %d, %H:%i') as redeemed_at_formatted,
+        CONCAT(
+          u.name, ' used ', 
+          ct.coupons_used, ' ', LOWER(cm.coupon_name), 
+          ' at ', v.vendor_name
+        ) as description,
+        DATE_FORMAT(ct.redeemed_at, '%Y-%m-%d %H:%i:%s') as date
+      FROM coupon_transactions ct
+      JOIN employees e ON ct.employee_id = e.id
+      JOIN users u ON e.user_id = u.id
+      JOIN vendors v ON ct.vendor_id = v.id
+      JOIN coupon_master cm ON ct.coupon_master_id = cm.id
+      WHERE ct.company_id = ?
+      ORDER BY ct.redeemed_at DESC
+      LIMIT 5
+    `;
+
+    const [recentActivity] = await pool.query(recentActivitySql, [companyId]);
+
+    // 3. RESPONSE EXACTLY MATCHING YOUR REACT NATIVE CODE
+    res.json(createResult(null, {
+      statistics: stats[0],  // ← Your React Native uses: stats.total_employees
+      recent_activity: recentActivity  // ← Your React Native uses: recentActivity.map()
+    }));
+
+  } catch (err) {
+    console.error('Dashboard error:', err);
+    res.status(500).json(createResult('Failed to load dashboard data'));
+  }
+});
+
+
 module.exports = router;
