@@ -271,6 +271,9 @@ export async function getVendorDailySettlement(vendorId, monthYear) {
             token: await AsyncStorage.getItem('token')
         };
         const response = await axios.get(url, { headers });
+        console.log('====================================');
+        console.log(response);
+        console.log('====================================');
         return response.data;
     } catch (ex) {
         console.log(ex);
