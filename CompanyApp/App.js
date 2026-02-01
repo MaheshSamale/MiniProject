@@ -37,7 +37,6 @@ export default function App() {
               <Stack.Screen name='AssignCoupon' component={AssignCoupon}/>
               <Stack.Screen name='CreateCoupon' component={CreateCoupon}/>
               <Stack.Screen name='VendorDetails' component={VendorDetails}/>
-
             </>
           )}
         </Stack.Navigator>

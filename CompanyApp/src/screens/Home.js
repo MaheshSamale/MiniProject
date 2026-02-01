@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-// Correct Import for Ionicons (Default export)
 import { Ionicons } from '@react-native-vector-icons/ionicons'; 
 
 // Import Screens
