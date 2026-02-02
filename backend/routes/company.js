@@ -5,6 +5,103 @@ const pool = require('../utils/db');
 const { createResult } = require('../utils/result');
 const config = require('../utils/config');
 
+const QRCode = require('qrcode');
+
+router.post('/generate-vendor-qr/:vendorId', async (req, res) => {
+    try {
+        const { vendorId } = req.params;
+        const companyId = req.user.companyId;
+
+        // 1. Get vendor details and verify ownership
+        const [vendors] = await pool.query(
+            'SELECT id, vendor_name, company_id FROM vendors WHERE id = ? AND company_id = ?', 
+            [vendorId, companyId]
+        );
+
+        if (vendors.length === 0) return res.json(createResult("Vendor not found or access denied"));
+        const vendor = vendors[0];
+
+        // 2. Define the data for the QR (Static Data)
+        const qrData = JSON.stringify({
+            vendor_id: vendor.id,
+            company_id: vendor.company_id,
+            vendor_name: vendor.vendor_name
+        });
+
+        // 3. Generate Base64 Image
+        const base64Image = await QRCode.toDataURL(qrData);
+
+        // 4. Store in database
+        await pool.query(
+            'UPDATE vendors SET qr_code_url = ? WHERE id = ?', 
+            [base64Image, vendorId]
+        );
+
+        res.json(createResult(null, { 
+            message: "QR Code generated successfully",
+            qr_code: base64Image 
+        }));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+
+// FIXED: Added the missing Add Vendor API
+router.post('/add-vendor', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        
+        const { name, email, phone, password, location } = req.body;
+        const companyId = req.user.companyId;
+        const hashedPassword = await bcrypt.hash(password, config.SALTROUND);
+        
+        // 1. Insert User
+        const [uRes] = await connection.query(
+            `INSERT INTO users (role, name, email, phone, password, status) VALUES ('VENDOR', ?, ?, ?, ?, 1)`,
+            [name, email, phone, hashedPassword]
+        );
+
+        // 2. Insert Vendor
+        const [vRes] = await connection.query(
+            `INSERT INTO vendors (user_id, company_id, vendor_name, phone, location) VALUES (?, ?, ?, ?, ?)`,
+            [uRes.insertId, companyId, name, phone, location]
+        );
+
+        const vendorId = vRes.insertId;
+
+        // 3. Generate QR Code Data
+        const qrData = JSON.stringify({
+            vendor_id: vendorId,
+            company_id: companyId,
+            vendor_name: name
+        });
+
+        const base64Image = await QRCode.toDataURL(qrData);
+
+        // 4. Update Vendor with QR Code
+        await connection.query(
+            'UPDATE vendors SET qr_code_url = ? WHERE id = ?', 
+            [base64Image, vendorId]
+        );
+
+        await connection.commit();
+        res.json(createResult(null, { 
+            message: "Vendor Created with QR Code", 
+            credentials: { email, password },
+            qr_code: base64Image
+        }));
+    } catch (err) {
+        await connection.rollback();
+        res.json(createResult(err.message));
+    } finally {
+        connection.release();
+    }
+});
+
+
+
 // Helper to create sub-users (Employees/Vendors) with Transaction support
 async function createSubUser(req, role, extraFields) {
     const connection = await pool.getConnection();
@@ -103,17 +200,7 @@ router.post('/assign-coupon', async (req, res) => {
     }
 });
 
-// FIXED: Added the missing Add Vendor API
-router.post('/add-vendor', async (req, res) => {
-  try {
-      const credentials = await createSubUser(req, 'VENDOR', {
-          location: req.body.location
-      });
-      res.json(createResult(null, { message: "Vendor Created Successfully", credentials }));
-  } catch (err) {
-      res.json(createResult(err.message));
-  }
-});
+
 
 // GET ROUTES (Vendors/Employees)
 router.get('/employees', async (req, res) => {
@@ -335,6 +422,7 @@ router.get('/vendors/:id', async (req, res) => {
                 u.email, 
                 u.phone, 
                 v.location, 
+                v.qr_code_url,  
                 v.status
             FROM vendors v
             JOIN users u ON v.user_id = u.id

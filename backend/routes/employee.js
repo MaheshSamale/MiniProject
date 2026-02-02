@@ -5,30 +5,31 @@ const { createResult } = require('../utils/result');
 
 // 1. View My Assigned Coupons (Wallet)
 router.get('/my-coupons', async (req, res) => {
-  try {
-      const userId = req.user.id;
-
-      const sql = `
-          SELECT 
-              ec.id as allocation_id,
-              cm.coupon_name,
-              cm.coupon_value,
-              ec.month_year,
-              ec.allocated,
-              ec.used,
-              ec.remaining
-          FROM employee_coupons ec
-          JOIN coupon_master cm ON ec.coupon_master_id = cm.id
-          JOIN employees e ON ec.employee_id = e.id
-          WHERE e.user_id = ? AND ec.remaining > 0
-          ORDER BY ec.month_year DESC, ec.created_at DESC`;
-
-      const [rows] = await pool.query(sql, [userId]);
-      res.json(createResult(null, rows));
-  } catch (err) {
-      res.status(500).json(createResult(err.message));
-  }
-});
+    try {
+        const userId = req.user.id;
+  
+        const sql = `
+            SELECT 
+                ec.id as allocation_id,
+                cm.id as coupon_master_id, -- Added this line
+                cm.coupon_name,
+                cm.coupon_value,
+                ec.month_year,
+                ec.allocated,
+                ec.used,
+                ec.remaining
+            FROM employee_coupons ec
+            JOIN coupon_master cm ON ec.coupon_master_id = cm.id
+            JOIN employees e ON ec.employee_id = e.id
+            WHERE e.user_id = ? AND ec.remaining > 0
+            ORDER BY ec.month_year DESC, ec.created_at DESC`;
+  
+        const [rows] = await pool.query(sql, [userId]);
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+  });
 
 
 // 2. Redeem Coupon (Fixed for Generated Columns)
@@ -90,4 +91,68 @@ router.post('/redeem', async (req, res) => {
         connection.release();
     }
 });
+
+
+// 3. Get Employee Profile
+router.get('/profile', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const sql = `
+            SELECT 
+                u.name,
+                u.email,
+                u.phone,
+                e.employee_code,
+                e.department,
+                e.designation,
+                c.company_name
+            FROM employees e
+            JOIN users u ON e.user_id = u.id
+            JOIN companies c ON e.company_id = c.id
+            WHERE e.user_id = ?`;
+
+        const [rows] = await pool.query(sql, [userId]);
+        
+        if (rows.length === 0) {
+            return res.status(404).json(createResult("Employee profile not found"));
+        }
+
+        res.json(createResult(null, rows[0]));
+    } catch (err) {
+        console.error("Profile Fetch Error:", err);
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+
+// Get My Recent Transactions
+router.get('/transactions', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const sql = `
+            SELECT 
+                ct.id,
+                v.vendor_name,
+                cm.coupon_name,
+                ct.coupons_used,
+                (ct.coupons_used * cm.coupon_value) as total_value,
+                ct.redeemed_at
+            FROM coupon_transactions ct
+            JOIN employees e ON ct.employee_id = e.id
+            JOIN vendors v ON ct.vendor_id = v.id
+            JOIN coupon_master cm ON ct.coupon_master_id = cm.id
+            WHERE e.user_id = ?
+            ORDER BY ct.redeemed_at DESC
+            LIMIT 20`;
+
+        const [rows] = await pool.query(sql, [userId]);
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+
 module.exports = router;

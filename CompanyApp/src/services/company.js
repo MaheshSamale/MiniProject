@@ -300,3 +300,18 @@ export async function deleteCouponMaster(id) {
     }
 }
 
+// Regenerate QR Code for a Vendor
+export async function regenerateVendorQR(vendorId) {
+    try {
+        const url = `${config.BASE_URL}/company/generate-vendor-qr/${vendorId}`;
+        const headers = {
+            token: await AsyncStorage.getItem('token')
+        };
+        const response = await axios.post(url, {}, { headers });
+        return response.data;
+    } catch (ex) {
+        console.log(ex);
+        Alert.alert('Error', 'Failed to generate QR code');
+        return { status: 'error', error: ex.message };
+    }
+}

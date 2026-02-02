@@ -1,69 +1,66 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@react-native-vector-icons/ionicons'; 
-import Dashboard from './Dashboard';
+import { Ionicons } from '@expo/vector-icons'; 
+
+import Dashboard from './Dashboard'; 
 import Scan from './Scan';
 import Profile from './Profile';
 
-// Import Screens
-
 const Tab = createBottomTabNavigator();
 
-function Home() {
+export default function Home() {
   return (
     <View style={styles.container}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarHideOnKeyboard: true,
-          tabBarShowLabel: true,
+          headerShown: true,
+          headerStyle: { 
+            backgroundColor: '#4F46E5',
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontWeight: 'bold' },
+          tabBarActiveTintColor: '#4F46E5',
+          tabBarInactiveTintColor: '#9CA3AF',
           
-          // Colors
-          tabBarActiveTintColor: '#4F46E5', // Indigo
-          tabBarInactiveTintColor: '#9CA3AF', // Gray
-          
-          // Label Style
+          // --- FIXING THE LAYOUT COLLISION ---
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: '600',
-            marginBottom: 5,
+            // This pushes the text up away from the system buttons
+            marginBottom: Platform.OS === 'android' ? 12 : 0, 
           },
-
-          // 👇 FLOATING TAB BAR STYLES
           tabBarStyle: {
-            position: 'absolute',
-            bottom: 25,     // Float 25px from bottom
-            left: 20,       // Margin from left
-            right: 20,      // Margin from right
-            elevation: 5,   // Android Shadow
             backgroundColor: '#ffffff',
-            borderRadius: 15, // Rounded corners
-            height: 70,     // Height of the floating bar
-            borderTopWidth: 0, // Remove top line
-            
-            // iOS Shadow
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 10 },
+            // Increase total height to provide breathing room
+            height: Platform.OS === 'android' ? 110 : 100,
+            // Ensures icons are centered properly
+            paddingTop: 8, 
+            // Extra padding at the bottom for Android system nav
+            paddingBottom: Platform.OS === 'android' ? 20 : 30,
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: '#E5E7EB',
+            elevation: 10, // Shadow for Android
+            shadowColor: '#000', // Shadow for iOS
+            shadowOffset: { width: 0, height: -2 },
             shadowOpacity: 0.1,
-            shadowRadius: 10,
-            paddingBottom: 5, 
+            shadowRadius: 4,
           },
+          // ----------------------------------------
 
-          // Icon Logic
-          tabBarIcon: ({ focused, color, size }) => {
+          tabBarIcon: ({ focused, color }) => {
             let iconName;
-
-            if (route.name === 'Dashboard') {
-              iconName = focused ? 'grid' : 'grid-outline';
-            } else if (route.name === 'Scan') {
-              iconName = focused ? 'people' : 'people-outline';
-            } else if (route.name === 'Vendor') {
-              iconName = focused ? 'Profile' : 'storefront-outline';
-            } 
-            
-            // Ensure we have a valid icon
-            return <Ionicons name={iconName || 'help-circle'} size={24} color={color} />;
+            if (route.name === 'Dashboard') iconName = focused ? 'grid' : 'grid-outline';
+            else if (route.name === 'Scan') iconName = focused ? 'qr-code' : 'qr-code-outline';
+            else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+            return (
+              <View style={{ marginBottom: Platform.OS === 'android' ? 5 : 0 }}>
+                <Ionicons name={iconName} size={24} color={color} />
+              </View>
+            );
           },
         })}
       >
@@ -76,10 +73,5 @@ function Home() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
 });
-
-export default Home;

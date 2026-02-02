@@ -119,3 +119,8 @@ CREATE INDEX idx_vendor_company ON vendors(company_id);
 CREATE INDEX idx_txn_vendor ON coupon_transactions(vendor_id);
 CREATE INDEX idx_txn_employee ON coupon_transactions(employee_id);
 CREATE INDEX idx_settlement_vendor ON vendor_settlements(vendor_id);
+
+
+
+
+ALTER TABLE vendors MODIFY COLUMN qr_code_url LONGTEXT;

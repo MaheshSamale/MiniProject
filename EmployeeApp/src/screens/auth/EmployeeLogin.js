@@ -1,83 +1,148 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  TextInput, 
-  Alert, 
-  StatusBar, 
-  KeyboardAvoidingView, 
-  Platform,
-  ScrollView,
-  ActivityIndicator
+  StyleSheet, View, Text, TouchableOpacity, TextInput, 
+  Alert, StatusBar, KeyboardAvoidingView, Platform,
+  ScrollView, ActivityIndicator, Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@react-native-vector-icons/ionicons'
-import { EmployeeContext } from '../../../App';
-import { loginEmployee } from '../../services/auth'
-
+import { Ionicons } from '@expo/vector-icons';
+import { EmployeeContext } from '../../context/EmployeeContext'; 
+import { loginEmployee, resetPasswordByMobile } from '../../services/auth';
 
 function EmployeeLogin({ navigation }) {
+  // Login State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start true to check session first
   
+  // Forgot Password & Success State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
   const { setEmployee } = useContext(EmployeeContext);
 
+  // --- PERSISTENT LOGIN CHECK ---
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const userData = await AsyncStorage.getItem('userData');
+        
+        if (token && userData) {
+          const user = JSON.parse(userData);
+          setEmployee({
+            name: user.name,
+            email: user.email,
+            token: token,
+          });
+          // App.js usually handles navigation based on the Context state
+        }
+      } catch (e) {
+        console.error("Session check error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
+
   const signin = async () => {
-    if (!email || !password) {
+    const cleanEmail = email.trim(); // Prevent trailing space issues
+    if (!cleanEmail || !password) {
       Alert.alert('Missing Info', 'Please enter both email and password.');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await loginEmployee(email, password);
-      
+      const result = await loginEmployee(cleanEmail, password);
       if (result.status === 'success') {
-        await AsyncStorage.setItem('token', result.data.token);
+        const userData = result.data;
+        
+        // Save Token and User Info for future sessions
+        await AsyncStorage.setItem('token', userData.token);
+        await AsyncStorage.setItem('userData', JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+        }));
+        
         setEmployee({
-          name: result.data.name,
-          email: result.data.email,
-          token: result.data.token,
+          name: userData.name,
+          email: userData.email,
+          token: userData.token,
         });
-        // Success handled by App.js navigation flow usually, but alert is fine
-        // Alert.alert('Welcome Back', 'Login Successful'); 
       } else {
         Alert.alert('Login Failed', result.error || 'Invalid credentials');
       }
     } catch (ex) {
-      console.log(ex);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert('Error', 'Connection failed. Please check your server.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!phone || !newPwd || !confirmPwd) {
+      Alert.alert('Error', 'All fields are required');
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const res = await resetPasswordByMobile(phone, newPwd);
+      if (res.status === 'success') {
+        setIsSuccess(true);
+        setTimeout(() => {
+          setModalVisible(false);
+          setIsSuccess(false);
+          setPhone(''); setNewPwd(''); setConfirmPwd('');
+        }, 2000);
+      } else {
+        Alert.alert('Error', res.error || 'Mobile number not registered');
+      }
+    } catch (ex) {
+      Alert.alert('Error', 'Reset failed. Try again later.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  // While checking for the token, show a splash loader
+  if (loading && !email) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
       
-      {/* Decorative Header Background */}
       <View style={styles.headerBackground}>
         <View style={styles.logoContainer}>
-           <Ionicons name="business" size={40} color="#4F46E5" />
+           <Ionicons name="fast-food" size={40} color="#4F46E5" />
         </View>
         <Text style={styles.headerTitle}>Welcome Back!</Text>
-        <Text style={styles.headerSubtitle}>Sign in to manage your coupan</Text>
+        <Text style={styles.headerSubtitle}>Sign in to manage your coupons</Text>
       </View>
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
-            
-            {/* Email Input */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email Address</Text>
               <View style={styles.inputContainer}>
@@ -89,12 +154,11 @@ function EmployeeLogin({ navigation }) {
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
-                  keyboardType="email-address"
+                  autoCorrect={false}
                 />
               </View>
             </View>
 
-            {/* Password Input */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputContainer}>
@@ -108,168 +172,107 @@ function EmployeeLogin({ navigation }) {
                   onChangeText={setPassword}
                 />
                 <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-                  <Ionicons 
-                    name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
-                    size={20} 
-                    color="#9CA3AF" 
-                  />
+                  <Ionicons name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <TouchableOpacity style={styles.forgotPass}>
+            <TouchableOpacity style={styles.forgotPass} onPress={() => setModalVisible(true)}>
                <Text style={styles.forgotPassText}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            {/* Sign In Button */}
             <TouchableOpacity 
               style={styles.signInButton} 
               onPress={signin}
               disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.signInButtonText}>Sign In</Text>
-              )}
+              {loading ? <ActivityIndicator color="white" /> : <Text style={styles.signInButtonText}>Sign In</Text>}
             </TouchableOpacity>
-
-            {/* Sign Up Link */}
-            <View style={styles.footerContainer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('CompanySignUp')}>
-                <Text style={styles.signupLink}>Create one</Text>
-              </TouchableOpacity>
-            </View>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Forgot Password Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {isSuccess ? (
+              <View style={styles.successContainer}>
+                <Ionicons name="checkmark-circle" size={80} color="#10B981" />
+                <Text style={styles.successTitle}>Reset Successful!</Text>
+                <Text style={styles.successSub}>You can now login with your new password.</Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Recover Password</Text>
+                  <TouchableOpacity onPress={() => setModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#64748B" />
+                  </TouchableOpacity>
+                </View>
+
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder="Registered Mobile" 
+                  keyboardType="phone-pad"
+                  onChangeText={setPhone}
+                />
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder="New Password" 
+                  secureTextEntry
+                  onChangeText={setNewPwd}
+                />
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder="Confirm Password" 
+                  secureTextEntry
+                  onChangeText={setConfirmPwd}
+                />
+
+                <TouchableOpacity 
+                  style={styles.resetBtn} 
+                  onPress={handleResetPassword}
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.resetBtnText}>Update Password</Text>}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  headerBackground: {
-    backgroundColor: '#4F46E5',
-    height: 220,
-    paddingTop: 60,
-    alignItems: 'center',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-  logoContainer: {
-    width: 70,
-    height: 70,
-    backgroundColor: 'white',
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 8,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#E0E7FF',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20, // Negative margin logic handled by card styles
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 25,
-    marginTop: 0, // Pulls card up into the header
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    backgroundColor: '#F9FAFB',
-    height: 50,
-    paddingHorizontal: 12,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    height: '100%',
-  },
-  forgotPass: {
-    alignSelf: 'flex-end',
-    marginBottom: 25,
-  },
-  forgotPassText: {
-    color: '#4F46E5',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  signInButton: {
-    backgroundColor: '#4F46E5',
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  signInButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  footerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  footerText: {
-    color: '#6B7280',
-    fontSize: 15,
-  },
-  signupLink: {
-    color: '#4F46E5',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
+  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  headerBackground: { backgroundColor: '#4F46E5', height: 220, paddingTop: 60, alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  logoContainer: { width: 70, height: 70, backgroundColor: 'white', borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: 'white' },
+  headerSubtitle: { fontSize: 16, color: '#E0E7FF' },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
+  card: { backgroundColor: 'white', borderRadius: 20, padding: 25, marginTop: -40, elevation: 5 },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, height: 50, paddingHorizontal: 12 },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 16 },
+  forgotPass: { alignSelf: 'flex-end', marginBottom: 25 },
+  forgotPassText: { color: '#4F46E5', fontWeight: '600' },
+  signInButton: { backgroundColor: '#4F46E5', height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  signInButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: 'white', borderRadius: 25, padding: 25 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold' },
+  modalInput: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 15, marginBottom: 12 },
+  resetBtn: { backgroundColor: '#4F46E5', padding: 16, borderRadius: 12, alignItems: 'center' },
+  resetBtnText: { color: 'white', fontWeight: 'bold' },
+  successContainer: { alignItems: 'center', paddingVertical: 20 },
+  successTitle: { fontSize: 22, fontWeight: 'bold', color: '#10B981', marginTop: 15 },
+  successSub: { color: '#6B7280', marginTop: 5 }
 });
 
 export default EmployeeLogin;

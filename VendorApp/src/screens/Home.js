@@ -6,8 +6,6 @@ import Dashboard from './Dashboard';
 import QrCode from './QrCode';
 import Profile from './Profile';
 
-// Import Screens
-
 const Tab = createBottomTabNavigator();
 
 function Home() {
@@ -18,57 +16,46 @@ function Home() {
           headerShown: false,
           tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
-          
-          // Colors
-          tabBarActiveTintColor: '#4F46E5', // Indigo
-          tabBarInactiveTintColor: '#9CA3AF', // Gray
-          
-          // Label Style
+          tabBarActiveTintColor: '#4F46E5', 
+          tabBarInactiveTintColor: '#9CA3AF', 
           tabBarLabelStyle: {
             fontSize: 11,
             fontWeight: '600',
             marginBottom: 5,
           },
-
-          // 👇 FLOATING TAB BAR STYLES
           tabBarStyle: {
             position: 'absolute',
-            bottom: 25,     // Float 25px from bottom
-            left: 20,       // Margin from left
-            right: 20,      // Margin from right
-            elevation: 5,   // Android Shadow
+            bottom: 25,
+            left: 20,
+            right: 20,
+            elevation: 5,
             backgroundColor: '#ffffff',
-            borderRadius: 15, // Rounded corners
-            height: 70,     // Height of the floating bar
-            borderTopWidth: 0, // Remove top line
-            
-            // iOS Shadow
+            borderRadius: 15,
+            height: 70,
+            borderTopWidth: 0,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.1,
             shadowRadius: 10,
             paddingBottom: 5, 
           },
-
-          // Icon Logic
-          tabBarIcon: ({ focused, color, size }) => {
+          tabBarIcon: ({ focused, color }) => {
             let iconName;
 
             if (route.name === 'Dashboard') {
               iconName = focused ? 'grid' : 'grid-outline';
-            } else if (route.name === 'QrCode') {
-              iconName = focused ? 'people' : 'people-outline';
-            } else if (route.name === 'Vendor') {
-              iconName = focused ? 'Profile' : 'storefront-outline';
+            } else if (route.name === 'My QR') {
+              iconName = focused ? 'qr-code' : 'qr-code-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
             } 
             
-            // Ensure we have a valid icon
-            return <Ionicons name={iconName || 'help-circle'} size={24} color={color} />;
+            return <Ionicons name={iconName} size={24} color={color} />;
           },
         })}
       >
         <Tab.Screen name="Dashboard" component={Dashboard} />
-        <Tab.Screen name="QrCode" component={QrCode} />
+        <Tab.Screen name="My QR" component={QrCode} />
         <Tab.Screen name="Profile" component={Profile} />
       </Tab.Navigator>
     </View>
