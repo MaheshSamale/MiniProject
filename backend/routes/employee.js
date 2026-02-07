@@ -154,5 +154,111 @@ router.get('/transactions', async (req, res) => {
     }
 });
 
+// POST /api/employee/pay-vendor
+router.post('/pay-vendor', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { vendor_id, amount } = req.body;
+        const userId = req.user.id; // From Employee Auth Token
+
+        await connection.beginTransaction();
+
+        // 1. Get Wallet & Lock Row (FOR UPDATE) to prevent race conditions (double-spending)
+        const [[empWallet]] = await connection.query(`
+            SELECT ew.id as wallet_id, ew.balance, e.id as employee_id, e.company_id 
+            FROM employees e
+            JOIN employee_wallets ew ON e.id = ew.employee_id
+            WHERE e.user_id = ? FOR UPDATE`, 
+            [userId]
+        );
+
+        if (!empWallet) throw new Error("Wallet not found.");
+        if (empWallet.balance < amount) throw new Error("Insufficient balance.");
+
+        // 2. Security Check: Ensure Vendor belongs to the same company
+        const [[vendor]] = await connection.query(
+            "SELECT id FROM vendors WHERE id = ? AND company_id = ?",
+            [vendor_id, empWallet.company_id]
+        );
+        if (!vendor) throw new Error("This vendor is not authorized for your company.");
+
+        // 3. Deduct from balance
+        await connection.query(
+            "UPDATE employee_wallets SET balance = balance - ? WHERE id = ?",
+            [amount, empWallet.wallet_id]
+        );
+
+        // 4. Record the DEBIT in ledger
+        await connection.query(`
+            INSERT INTO wallet_ledger (wallet_id, amount, transaction_type, vendor_id, description) 
+            VALUES (?, ?, 'DEBIT', ?, 'Payment at Vendor')`,
+            [empWallet.wallet_id, amount, vendor_id]
+        );
+
+        await connection.commit();
+        res.json({ status: "success", message: "Payment successful", balance: empWallet.balance - amount });
+
+    } catch (err) {
+        await connection.rollback();
+        res.status(400).json({ status: "error", message: err.message });
+    } finally {
+        connection.release();
+    }
+});
+
+// 1. Get Wallet Balance
+// Returns the current points/money available in the wallet
+router.get('/wallet-balance', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const sql = `
+            SELECT 
+                ew.balance,
+                ew.updated_at as last_updated
+            FROM employee_wallets ew
+            JOIN employees e ON ew.employee_id = e.id
+            WHERE e.user_id = ?`;
+
+        const [rows] = await pool.query(sql, [userId]);
+
+        if (rows.length === 0) {
+            // If no points were ever assigned, return 0 balance
+            return res.json(createResult(null, { balance: 0, message: "Wallet not initialized" }));
+        }
+
+        res.json(createResult(null, rows[0]));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// 2. Get Wallet Ledger (Transaction History)
+// Shows every Credit (from Admin) and Debit (spent at Vendors)
+router.get('/wallet-history', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const sql = `
+            SELECT 
+                wl.id as transaction_id,
+                wl.amount,
+                wl.transaction_type,
+                wl.description,
+                v.vendor_name,
+                wl.created_at as transaction_date
+            FROM wallet_ledger wl
+            JOIN employee_wallets ew ON wl.wallet_id = ew.id
+            JOIN employees e ON ew.employee_id = e.id
+            LEFT JOIN vendors v ON wl.vendor_id = v.id
+            WHERE e.user_id = ?
+            ORDER BY wl.created_at DESC`;
+
+        const [rows] = await pool.query(sql, [userId]);
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
 
 module.exports = router;

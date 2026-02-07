@@ -58,4 +58,69 @@ router.get('/my-transactions', async (req, res) => {
     }
 });
 
+
+// 3. Get Points/Money Transactions
+// This shows payments received from the Wallet system
+router.get('/point-transactions', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const sql = `
+            SELECT 
+                wl.id as transaction_id,
+                u.name as employee_name,
+                e.employee_code,
+                wl.amount,
+                wl.description,
+                wl.created_at as paid_at
+            FROM wallet_ledger wl
+            JOIN vendors v ON wl.vendor_id = v.id
+            JOIN employees e ON v.company_id = e.company_id -- Simplified join
+            JOIN employee_wallets ew ON wl.wallet_id = ew.id AND e.id = ew.employee_id
+            JOIN users u ON e.user_id = u.id
+            WHERE v.user_id = ? AND wl.transaction_type = 'DEBIT'
+            ORDER BY wl.created_at DESC`;
+
+        const [rows] = await pool.query(sql, [userId]);
+        res.json(createResult(null, rows));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
+// 4. Get Total Earnings Summary (Combined Coupons + Points)
+// Perfect for the Vendor's home screen
+router.get('/earnings-summary', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const sql = `
+            SELECT 
+                -- Total from Coupons
+                (SELECT IFNULL(SUM(ct.coupons_used * cm.coupon_value), 0)
+                 FROM coupon_transactions ct
+                 JOIN coupon_master cm ON ct.coupon_master_id = cm.id
+                 JOIN vendors v ON ct.vendor_id = v.id
+                 WHERE v.user_id = ?) as coupon_earnings,
+
+                -- Total from Points
+                (SELECT IFNULL(SUM(wl.amount), 0)
+                 FROM wallet_ledger wl
+                 JOIN vendors v ON wl.vendor_id = v.id
+                 WHERE v.user_id = ? AND wl.transaction_type = 'DEBIT') as point_earnings
+        `;
+
+        const [rows] = await pool.query(sql, [userId, userId]);
+        
+        const summary = rows[0];
+        res.json(createResult(null, {
+            coupon_earnings: summary.coupon_earnings,
+            point_earnings: summary.point_earnings,
+            total_combined: parseFloat(summary.coupon_earnings) + parseFloat(summary.point_earnings)
+        }));
+    } catch (err) {
+        res.status(500).json(createResult(err.message));
+    }
+});
+
 module.exports = router;

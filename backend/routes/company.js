@@ -720,4 +720,53 @@ router.get('/dashboard/summary', async (req, res) => {
 });
 
 
+// POST /api/company/assign-points
+router.post('/assign-points', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { employee_code, amount, description } = req.body;
+        const companyId = req.user.companyId; 
+
+        await connection.beginTransaction();
+
+        // 1. Find Employee ID from the Code
+        const [empRows] = await connection.query(
+            "SELECT id FROM employees WHERE UPPER(TRIM(employee_code)) = UPPER(TRIM(?)) AND company_id = ?",
+            [employee_code, companyId]
+        );
+
+        if (empRows.length === 0) {
+            return res.status(404).json(createResult(`Employee '${employee_code}' not found.`));
+        }
+        const employeeId = empRows[0].id;
+
+        // 2. Upsert Wallet (Create if doesn't exist, else update balance)
+        await connection.query(`
+            INSERT INTO employee_wallets (employee_id, balance) 
+            VALUES (?, ?) 
+            ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance)`,
+            [employeeId, amount]
+        );
+
+        // 3. Get the wallet ID for the ledger
+        const [[wallet]] = await connection.query(
+            "SELECT id FROM employee_wallets WHERE employee_id = ?", [employeeId]
+        );
+
+        // 4. Record the Credit in Ledger
+        await connection.query(
+            `INSERT INTO wallet_ledger (wallet_id, amount, transaction_type, description) 
+             VALUES (?, ?, 'CREDIT', ?)`,
+            [wallet.id, amount, description || 'Points assigned via Admin Panel']
+        );
+
+        await connection.commit();
+        res.json(createResult(null, `Successfully added ${amount} points to ${employee_code}`));
+    } catch (err) {
+        await connection.rollback();
+        res.status(500).json(createResult(err.message));
+    } finally {
+        connection.release();
+    }
+});
 module.exports = router;
